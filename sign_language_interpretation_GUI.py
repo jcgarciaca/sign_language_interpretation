@@ -4,28 +4,31 @@ import cv2
 import PIL.Image, PIL.ImageTk
 import time
 import os
+from network_model import NetworkModel
 
 class App:
     def __init__(self, window, window_title, video_source=0):
+        self.nn_model = NetworkModel()
+
         self.window = window
         self.window.title(window_title)
         self.video_source = video_source
         
         self.init_complete = False
-        self.cnt = 0
+        
         self.text_disp = tkinter.StringVar()
         self.text_disp.set('Meaning')
 
         # open video source (by default this will try to open the computer webcam)
-        self.vid = None # MyVideoCapture(self.video_source)
+        self.vid = None
 
         # Create a canvas that can fit the above video source size
         self.canvas = tkinter.Canvas(window, width = 600, height = 400)
         self.canvas.pack()
 
         # Button that lets the user take a snapshot
-        self.btn_open=tkinter.Button(window, text="Open Video", width=20, command=self.search_file)
-        self.btn_analyze=tkinter.Button(window, text="Analyze", width=20, command=self.analyze_file)
+        self.btn_open = tkinter.Button(window, text="Open Video", width=20, command=self.search_file)
+        self.btn_analyze = tkinter.Button(window, text="Analyze", width=20, command=self.analyze_file)
         self.lbl_pred = tkinter.Label(window, textvariable=self.text_disp, font=("Helvetica", 16))
         self.btn_open.pack(anchor=tkinter.SW, expand=True)
         self.btn_analyze.pack(anchor=tkinter.SW, expand=True)
@@ -38,14 +41,14 @@ class App:
         self.window.mainloop()
         
     def search_file(self):
-        self.filename = filedialog.askopenfilename(initialdir = os.getcwd(), title = "Select video")
+        self.filename = filedialog.askopenfilename(initialdir = '/home/msdc/Downloads/señas', title = "Select video")
         self.vid = MyVideoCapture(self.filename)
         if not self.init_complete:
             self.init_complete = True
 
     def analyze_file(self):
-        self.cnt += 1
-        self.text_disp.set('Prediction {}'.format(self.cnt))
+        prediction = self.nn_model.predict_video(self.filename)
+        self.text_disp.set(prediction)#'Prediction {}'.format(self.cnt))
             
     def update(self):
         # Get a frame from the video source
@@ -55,8 +58,7 @@ class App:
             if ret:
                 self.photo = PIL.ImageTk.PhotoImage(image = PIL.Image.fromarray(frame))
                 self.canvas.create_image(0, 0, image = self.photo, anchor = tkinter.NW)
-                # self.canvas.create_image(0, 0, image = frame, anchor = tkinter.NW)
-
+                
         self.window.after(self.delay, self.update)
 
 
